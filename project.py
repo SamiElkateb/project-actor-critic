@@ -13,7 +13,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v1"
+CURRENT_MODEL_VERSION = "v2"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -30,11 +30,11 @@ loaded_rewards = pd.DataFrame({"reward_sum": []})
 # Neural net model takes the state and outputs action and value for that state
 actor = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2040,)),
+        Dense(512, activation="elu", input_shape=(2 * 2040,)),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
-critic = Sequential([Dense(512, activation="elu", input_shape=(2040,)), Dense(1)])
+critic = Sequential([Dense(512, activation="elu", input_shape=(2 * 2040,)), Dense(1)])
 
 actor.compile(optimizer=RMSprop(1e-4), loss="sparse_categorical_crossentropy")
 critic.compile(optimizer=RMSprop(1e-4), loss="mse")
@@ -65,26 +65,12 @@ class Observation:
     @staticmethod
     def __crop__(obs):
         if obs is None or type(obs) != np.ndarray:
-            return np.zeros(40 * 51).reshape(40, 51)
+            return np.zeros(40 * 51).reshape(40, 51).ravel()
         # On coupe l'image pour ne garder que la partie intéressante du jeu,
         # sans le score, la raquette de l'ennemi et les bandes sur les cotés de l'écran
-        return ((obs[34:194:4, 40:142:2, 2] > 50).astype(np.uint8)).astype(float)
+        return ((obs[34:194:4, 40:142:2, 2] > 50).astype(np.uint8)).astype(float).ravel()
 
     debug_image_nb = 0
-
-    @staticmethod
-    def save_debug(input_obs):
-        obs = input_obs if len(input_obs.shape) == 2 else input_obs[0, :, :, 0]
-        rgb_image = np.zeros((obs.shape[0], obs.shape[1], 3), dtype=np.uint8)
-        rgb_image[obs == -1, 0] = 255
-        rgb_image[obs == 1, 2] = 255
-        filename = os.path.join(DEBUG_PATH, f"image_{Observation.debug_image_nb}.png")
-        cv2.imwrite(filename, rgb_image)
-        Observation.debug_image_nb += 1
-
-    @staticmethod
-    def preprocess_obs(obs):
-        return (Observation.__crop__(obs)).reshape(-1, 40, 51, 1)
 
     def get_obs(self):
         state_before_copy = self.obs.copy()
@@ -101,16 +87,21 @@ def train_actor_critic():
         Xs, ys, rewards = [], [], []
         prev_obs, obs = None, env.reset()
         for _ in range(99000):
-            x = Observation(prev_obs, obs).get_obs()
+            x = np.hstack(
+                [
+                    Observation.__crop__(obs),
+                    Observation.__crop__(prev_obs),
+                ]
+            )
             prev_obs = obs
 
-            action_probs = actor.predict(x, verbose=0)
+            action_probs = actor.predict(x[None, :], verbose=0)
             ya = np.random.choice(len(ACTIONS), p=action_probs[0])
             action = ACTIONS[ya]
 
             obs, reward, done, *_ = env.step(action)
 
-            Xs.append(x.reshape(40 * 51))
+            Xs.append(x)
             ys.append(ya)
             rewards.append(reward)
 
@@ -151,7 +142,7 @@ def play_neural_net():
     prev_obs, obs = None, env.reset()
     env.render()
     for t in range(99000):
-        x = Observation(prev_obs, obs).get_obs()
+        x = np.hstack([Observation.__crop__(obs), Observation.__crop__(prev_obs)])
         prev_obs = obs
 
         action_probs = actor.predict(x, verbose=0)
@@ -200,6 +191,12 @@ if __name__ == "__main__":
 
     ale = ALEInterface()
     ale.loadROM(Pong)
+
+    v1_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v1", "rewards.csv"))
+    v2_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v2", "rewards.csv"))
+
+    print("v1 mean", v1_data.reward_sum.mean())
+    print("v2 mean", v2_data.reward_sum.mean())
 
     IS_DEBUG = args.debug
     if IS_DEBUG:
