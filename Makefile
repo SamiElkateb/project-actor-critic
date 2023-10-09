@@ -1,5 +1,5 @@
 start:
-	poetry run ./project.py play
+	poetry run python3 ./project.py play
 
 test:
-	poetry run ./project.py watch
+	poetry run python3 ./project.py watch
