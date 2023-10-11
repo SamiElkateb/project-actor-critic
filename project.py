@@ -13,7 +13,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v3"
+CURRENT_MODEL_VERSION = "v4"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -30,28 +30,18 @@ loaded_rewards = pd.DataFrame({"reward_sum": []})
 # Neural net model takes the state and outputs action and value for that state
 actor = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2 * 6400,)),
+        Dense(512, activation="elu", input_shape=(2 * 40 * 62,)),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
-critic = Sequential([Dense(512, activation="elu", input_shape=(2 * 6400,)), Dense(1)])
+critic = Sequential(
+    [Dense(512, activation="elu", input_shape=(2 * 40 * 62,)), Dense(1)]
+)
 
 actor.compile(optimizer=RMSprop(1e-4), loss="sparse_categorical_crossentropy")
 critic.compile(optimizer=RMSprop(1e-4), loss="mse")
 
 gamma = 0.99
-
-
-def prepro(I):
-    """prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector. http://karpathy.github.io/2016/05/31/rl/"""
-    if I is None or type(I) != np.ndarray:
-        return np.zeros((6400,))
-    I = I[35:195]  # crop
-    I = I[::2, ::2, 0]  # downsample by factor of 2
-    I[I == 144] = 0  # erase background (background type 1)
-    I[I == 109] = 0  # erase background (background type 2)
-    I[I != 0] = 1  # everything else (paddles, ball) just set to 1
-    return I.astype(float).ravel()
 
 
 def discount_rewards(r):
@@ -71,18 +61,16 @@ class Observation:
     # Pour obtenir une observation
     def __init__(self, obs_t, obs_tp1) -> None:
         self.action = None
-        self.obs = Observation.__crop__(obs_t)
-        self.obs_tp1 = Observation.__crop__(obs_tp1)
+        self.obs = Observation.crop(obs_t)
+        self.obs_tp1 = Observation.crop(obs_tp1)
 
     @staticmethod
-    def __crop__(obs):
+    def crop(obs):
         if obs is None or type(obs) != np.ndarray:
-            return np.zeros(40 * 51).reshape(40, 51).ravel()
+            return np.zeros((40 * 62,))
         # On coupe l'image pour ne garder que la partie intéressante du jeu,
         # sans le score, la raquette de l'ennemi et les bandes sur les cotés de l'écran
-        return (
-            ((obs[34:194:4, 40:142:2, 2] > 50).astype(np.uint8)).astype(float).ravel()
-        )
+        return (obs[34:194:4, 18:142:2, 2] > 50).astype(float).ravel()
 
     debug_image_nb = 0
 
@@ -101,7 +89,7 @@ def train_actor_critic():
         Xs, ys, rewards = [], [], []
         prev_obs, obs = None, env.reset()
         for t in range(99000):
-            x = np.hstack([prepro(obs), prepro(prev_obs)])
+            x = np.hstack([Observation.crop(obs), Observation.crop(prev_obs)])
             prev_obs = obs
 
             action_probs = actor.predict(x[None, :], verbose=0)
@@ -153,7 +141,7 @@ def play_neural_net():
     prev_obs, obs = None, env.reset()
     env.render()
     for t in range(99000):
-        x = np.hstack([Observation.__crop__(obs), Observation.__crop__(prev_obs)])
+        x = np.hstack([Observation.crop(obs), Observation.crop(prev_obs)])
         prev_obs = obs
 
         action_probs = actor.predict(x, verbose=0)
@@ -180,9 +168,9 @@ if __name__ == "__main__":
         "mode",
         metavar="mode",
         type=str,
-        choices=["play", "watch"],
+        choices=["play", "watch", "stats"],
         help="""
-        Accepted values: play | watch.
+        Accepted values: play | watch | stats.
         The mode of the python script.
         The play mode is for generating data to train the agent.
         The watch mode is for watching the agent play.
@@ -200,27 +188,32 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    ale = ALEInterface()
-    ale.loadROM(Pong)
-
     v0_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v0", "rewards.csv"))
     v1_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v1", "rewards.csv"))
     v2_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v2", "rewards.csv"))
     v3_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v3", "rewards.csv"))
+    v4_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v4", "rewards.csv"))
 
     print("v0 mean", v0_data.reward_sum.mean())
     print("v1 mean", v1_data.reward_sum.mean())
     print("v2 mean", v2_data.reward_sum.mean())
     print("v3 mean", v3_data.reward_sum.mean())
+    print("v4 mean", v4_data.reward_sum.mean())
 
     IS_DEBUG = args.debug
     if IS_DEBUG:
         os.makedirs(DEBUG_PATH, exist_ok=True)
 
-    if args.mode == "watch":
+    if args.mode == "stats":
+        pass
+    elif args.mode == "watch":
         print(f"Starting the script in {args.mode} mode with ...")
+        ale = ALEInterface()
+        ale.loadROM(Pong)
         play_neural_net()
     else:
+        ale = ALEInterface()
+        ale.loadROM(Pong)
         print(f"Starting the script in {args.mode} mode ...")
         os.makedirs(MODEL_PATH, exist_ok=True)
 
