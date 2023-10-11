@@ -4,16 +4,17 @@ import sys
 
 import cv2
 import gymnasium as gym
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from ale_py import ALEInterface
 from ale_py.roms import Pong
-from matplotlib.pyplot import np
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v4"
+CURRENT_MODEL_VERSION = "v5"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -24,24 +25,68 @@ IS_DEBUG = False
 UP_ACTION = 2
 DOWN_ACTION = 3
 ACTIONS = [UP_ACTION, DOWN_ACTION]
+WIDTH = 62
+HEIGHT = 80
 
 loaded_rewards = pd.DataFrame({"reward_sum": []})
 
 # Neural net model takes the state and outputs action and value for that state
 actor = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2 * 40 * 62,)),
+        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH,)),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
 critic = Sequential(
-    [Dense(512, activation="elu", input_shape=(2 * 40 * 62,)), Dense(1)]
+    [Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH,)), Dense(1)]
 )
 
 actor.compile(optimizer=RMSprop(1e-4), loss="sparse_categorical_crossentropy")
 critic.compile(optimizer=RMSprop(1e-4), loss="mse")
 
 gamma = 0.99
+
+
+def plot(reward_sums):
+    SIZE = 273
+    data = []
+    for reward_sum in reward_sums:
+        arr = (
+            reward_sum.rolling(window=50)
+            .mean()
+            .dropna()
+            .truncate(after=SIZE)
+            .to_numpy()
+            .flatten()
+        )
+        padded_arr = np.pad(arr, (0, SIZE - len(arr)), mode="constant", constant_values=np.NaN)
+        data.append(padded_arr)
+
+    data = {key: value for key, value in enumerate(data)}
+    pd.DataFrame(data).plot()
+    plt.show()
+
+
+def stats(mode):
+    existing_stats = []
+    non_existing_data_streak = 0
+    current_data_version = 0
+    while non_existing_data_streak < 2:
+        filepath = os.path.join(
+            CURRENT_DIR, "models", f"v{current_data_version}", "rewards.csv"
+        )
+        if os.path.exists(filepath):
+            existing_stats.append(pd.read_csv(filepath))
+            non_existing_data_streak = 0
+        else:
+            non_existing_data_streak += 1
+        current_data_version += 1
+
+    for i, stat in enumerate(existing_stats):
+        print(f"v{i} mean", stat.reward_sum.mean())
+
+    if mode == "stats":
+        plot(existing_stats)
 
 
 def discount_rewards(r):
@@ -67,10 +112,10 @@ class Observation:
     @staticmethod
     def crop(obs):
         if obs is None or type(obs) != np.ndarray:
-            return np.zeros((40 * 62,))
+            return np.zeros((HEIGHT * WIDTH,))
         # On coupe l'image pour ne garder que la partie intéressante du jeu,
         # sans le score, la raquette de l'ennemi et les bandes sur les cotés de l'écran
-        return (obs[34:194:4, 18:142:2, 2] > 50).astype(float).ravel()
+        return (obs[34:194:2, 18:142:2, 2] > 50).astype(float).ravel()
 
     debug_image_nb = 0
 
@@ -187,18 +232,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     args = parser.parse_args()
+    print(args.mode, "stats")
+    print(args.mode == "stats")
 
-    v0_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v0", "rewards.csv"))
-    v1_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v1", "rewards.csv"))
-    v2_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v2", "rewards.csv"))
-    v3_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v3", "rewards.csv"))
-    v4_data = pd.read_csv(os.path.join(CURRENT_DIR, "models", "v4", "rewards.csv"))
-
-    print("v0 mean", v0_data.reward_sum.mean())
-    print("v1 mean", v1_data.reward_sum.mean())
-    print("v2 mean", v2_data.reward_sum.mean())
-    print("v3 mean", v3_data.reward_sum.mean())
-    print("v4 mean", v4_data.reward_sum.mean())
+    stats(args.mode)
 
     IS_DEBUG = args.debug
     if IS_DEBUG:
