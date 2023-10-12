@@ -14,7 +14,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v5"
+CURRENT_MODEL_VERSION = "v6"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -25,12 +25,11 @@ IS_DEBUG = False
 UP_ACTION = 2
 DOWN_ACTION = 3
 ACTIONS = [UP_ACTION, DOWN_ACTION]
-WIDTH = 62
+WIDTH = 80
 HEIGHT = 80
 
 loaded_rewards = pd.DataFrame({"reward_sum": []})
 
-# Neural net model takes the state and outputs action and value for that state
 actor = Sequential(
     [
         Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH,)),
@@ -59,7 +58,9 @@ def plot(reward_sums):
             .to_numpy()
             .flatten()
         )
-        padded_arr = np.pad(arr, (0, SIZE - len(arr)), mode="constant", constant_values=np.NaN)
+        padded_arr = np.pad(
+            arr, (0, SIZE - len(arr)), mode="constant", constant_values=np.NaN
+        )
         data.append(padded_arr)
 
     data = {key: value for key, value in enumerate(data)}
@@ -102,27 +103,15 @@ def discount_rewards(r):
     return discounted_r
 
 
-class Observation:
-    # Pour obtenir une observation
-    def __init__(self, obs_t, obs_tp1) -> None:
-        self.action = None
-        self.obs = Observation.crop(obs_t)
-        self.obs_tp1 = Observation.crop(obs_tp1)
-
-    @staticmethod
-    def crop(obs):
-        if obs is None or type(obs) != np.ndarray:
-            return np.zeros((HEIGHT * WIDTH,))
-        # On coupe l'image pour ne garder que la partie intéressante du jeu,
-        # sans le score, la raquette de l'ennemi et les bandes sur les cotés de l'écran
-        return (obs[34:194:2, 18:142:2, 2] > 50).astype(float).ravel()
-
-    debug_image_nb = 0
-
-    def get_obs(self):
-        state_before_copy = self.obs.copy()
-        state_before_copy[:, -1] = 0
-        return (self.obs_tp1 - state_before_copy).reshape(1, 40 * 51)
+def crop(obs):
+    if obs is None or type(obs) != np.ndarray:
+        return np.zeros((6400,))
+    obs = obs[35:195]
+    obs = obs[::2, ::2, 0]
+    obs[obs == 144] = 0
+    obs[obs == 109] = 0
+    obs[obs != 0] = 1
+    return obs.astype(float).ravel()
 
 
 def train_actor_critic():
@@ -134,7 +123,7 @@ def train_actor_critic():
         Xs, ys, rewards = [], [], []
         prev_obs, obs = None, env.reset()
         for t in range(99000):
-            x = np.hstack([Observation.crop(obs), Observation.crop(prev_obs)])
+            x = np.hstack([crop(obs), crop(prev_obs)])
             prev_obs = obs
 
             action_probs = actor.predict(x[None, :], verbose=0)
@@ -186,7 +175,7 @@ def play_neural_net():
     prev_obs, obs = None, env.reset()
     env.render()
     for t in range(99000):
-        x = np.hstack([Observation.crop(obs), Observation.crop(prev_obs)])
+        x = np.hstack([crop(obs), crop(prev_obs)])
         prev_obs = obs
 
         action_probs = actor.predict(x, verbose=0)
