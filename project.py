@@ -14,7 +14,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v6"
+CURRENT_MODEL_VERSION = "v7"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -22,9 +22,10 @@ REWARDS_PATH = os.path.join(MODEL_PATH, "rewards.csv")
 DEBUG_PATH = os.path.join(CURRENT_DIR, "debug")
 IS_DEBUG = False
 
+NO_ACTION = 0
 UP_ACTION = 2
 DOWN_ACTION = 3
-ACTIONS = [UP_ACTION, DOWN_ACTION]
+ACTIONS = [NO_ACTION, UP_ACTION, DOWN_ACTION]
 WIDTH = 80
 HEIGHT = 80
 
