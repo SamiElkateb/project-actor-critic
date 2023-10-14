@@ -9,12 +9,12 @@ import numpy as np
 import pandas as pd
 from ale_py import ALEInterface
 from ale_py.roms import Pong
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D, Dense, Flatten
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v7"
+CURRENT_MODEL_VERSION = "v8"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -25,7 +25,7 @@ IS_DEBUG = False
 NO_ACTION = 0
 UP_ACTION = 2
 DOWN_ACTION = 3
-ACTIONS = [NO_ACTION, UP_ACTION, DOWN_ACTION]
+ACTIONS = [UP_ACTION, DOWN_ACTION]
 WIDTH = 80
 HEIGHT = 80
 
@@ -33,12 +33,14 @@ loaded_rewards = pd.DataFrame({"reward_sum": []})
 
 actor = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH,)),
+        Conv2D(6, 3, input_shape=(HEIGHT,  2 * WIDTH, 1)),
+        Conv2D(6, 5),
+        Flatten(),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
 critic = Sequential(
-    [Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH,)), Dense(1)]
+    [Conv2D(6, 3, input_shape=(HEIGHT,  2 * WIDTH, 1)), Conv2D(6, 5), Flatten(), Dense(1)]
 )
 
 actor.compile(optimizer=RMSprop(1e-4), loss="sparse_categorical_crossentropy")
@@ -106,13 +108,13 @@ def discount_rewards(r):
 
 def crop(obs):
     if obs is None or type(obs) != np.ndarray:
-        return np.zeros((6400,))
+        return np.zeros((HEIGHT, WIDTH))
     obs = obs[35:195]
     obs = obs[::2, ::2, 0]
     obs[obs == 144] = 0
     obs[obs == 109] = 0
     obs[obs != 0] = 1
-    return obs.astype(float).ravel()
+    return obs.astype(float)
 
 
 def train_actor_critic():
@@ -126,8 +128,7 @@ def train_actor_critic():
         for t in range(99000):
             x = np.hstack([crop(obs), crop(prev_obs)])
             prev_obs = obs
-
-            action_probs = actor.predict(x[None, :], verbose=0)
+            action_probs = actor.predict(x.reshape(-1, 80, 160, 1), verbose=0)
             ya = np.random.choice(len(ACTIONS), p=action_probs[0])
             action = ACTIONS[ya]
 
