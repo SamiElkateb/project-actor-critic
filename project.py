@@ -14,7 +14,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v8"
+CURRENT_MODEL_VERSION = "v9"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -33,14 +33,19 @@ loaded_rewards = pd.DataFrame({"reward_sum": []})
 
 actor = Sequential(
     [
-        Conv2D(6, 3, input_shape=(HEIGHT,  2 * WIDTH, 1)),
-        Conv2D(6, 5),
+        Conv2D(16, 8, input_shape=(HEIGHT, 2 * WIDTH, 1), activation="relu"),
+        Conv2D(32, 4, activation="relu"),
         Flatten(),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
 critic = Sequential(
-    [Conv2D(6, 3, input_shape=(HEIGHT,  2 * WIDTH, 1)), Conv2D(6, 5), Flatten(), Dense(1)]
+    [
+        Conv2D(16, 8, input_shape=(HEIGHT, 2 * WIDTH, 1), activation="relu"),
+        Conv2D(32, 4, activation="relu"),
+        Flatten(),
+        Dense(1),
+    ]
 )
 
 actor.compile(optimizer=RMSprop(1e-4), loss="sparse_categorical_crossentropy")
