@@ -13,7 +13,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v11"
+CURRENT_MODEL_VERSION = "v12"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -27,7 +27,8 @@ DOWN_ACTION = 3
 ACTIONS = [NO_ACTION, UP_ACTION, DOWN_ACTION]
 WIDTH = 80
 HEIGHT = 80
-SKIP_GRAPHS = [1, 2, 3, 4, 5, 7]
+SKIP_GRAPHS = [1, 2, 3, 4, 5, 7, 8, 10, 11]
+GRAPH_LEGENDS = {6: "SAGAR_GUBBI_IMPLEMENTATION", 8: "Conv2D Project", 9: "Conv2D Article", 6: "SAGAR_GUBBI_IMPLEMENTATION", 12: "Conv2D Article + NO_ACTION + HIT_REWARD"}
 
 loaded_rewards = pd.DataFrame({"reward_sum": []})
 
@@ -72,10 +73,10 @@ def plot(reward_sums):
         )
         data[i] = padded_arr
 
-    # data = {key: value for key, value in enumerate(data)}
     pd.DataFrame(data).plot()
     plt.xlabel("Nombre d'épisode")
     plt.ylabel("Moyenne mobile des gains / épisode")
+    plt.savefig('rolling_average_graph.png')
     plt.show()
 
 
@@ -83,15 +84,16 @@ def stats(mode):
     existing_stats = {}
     non_existing_data_streak = 0
     current_data_version = 0
-    while non_existing_data_streak < 2:
-        if current_data_version in SKIP_GRAPHS:
+    while non_existing_data_streak < 10:
+        if current_data_version not in GRAPH_LEGENDS.keys():
             current_data_version += 1
+            non_existing_data_streak += 1
             continue
         filepath = os.path.join(
             CURRENT_DIR, "models", f"v{current_data_version}", "rewards.csv"
         )
         if os.path.exists(filepath):
-            existing_stats[current_data_version] = pd.read_csv(filepath)
+            existing_stats[GRAPH_LEGENDS[current_data_version]] = pd.read_csv(filepath)
             non_existing_data_streak = 0
         else:
             non_existing_data_streak += 1
@@ -109,16 +111,14 @@ def discount_rewards(r):
     running_add = 0
     for t in reversed(range(0, len(r))):
         if r[t] != 0:
-            running_add = (
-                0  # reset the sum, since this was a game boundary (pong specific!)
-            )
+            # reset the sum, since this was a game boundary (pong specific!)
+            running_add = 0
         running_add = running_add * gamma + r[t]
         discounted_r[t] = running_add
     return discounted_r
 
 
 def compute_hit_ball_bonus(obs_t, obs_tp1):
-    return 0
     if type(obs_t) != np.ndarray or type(obs_tp1) != np.ndarray:
         return 0
     crop_obs_t = ((obs_t[34:194:4, 40:142:2, 2] > 50).astype(np.uint8)).astype(float)
@@ -131,7 +131,7 @@ def compute_hit_ball_bonus(obs_t, obs_tp1):
     if len(ball_t) < 1 or len(ball_tp1) < 1:
         return 0
     has_hit_ball = ball_t[0][1] == 49 and ball_tp1[0][1] == 47
-    return 0.1 if has_hit_ball else 0
+    return 0.01 if has_hit_ball else 0
 
 
 def crop(obs):
@@ -192,9 +192,7 @@ def train_actor_critic():
                 print(
                     f"Episode {ep} -- reward_sum: {reward_sum}, avg_reward_sum: {avg_reward_sum}\n"
                 )
-                print(
-                    f"Episode {ep} -- mod_reward_sum: {mod_reward_sum}\n"
-                )
+                print(f"Episode {ep} -- mod_reward_sum: {mod_reward_sum}\n")
 
                 if ep % 10 == 0:
                     current_df = pd.DataFrame({"reward_sum": reward_sums})
@@ -216,7 +214,8 @@ def play_neural_net():
         x = np.hstack([crop(obs), crop(prev_obs)])
         prev_obs = obs
 
-        action_probs = actor.predict(x, verbose=0)
+        action_probs = actor.predict(x.reshape(-1, 80, 160, 1), verbose=0)
+        # action_probs = actor.predict(x, verbose=0)
         ya = np.random.choice(len(ACTIONS), p=action_probs[0])
         action = ACTIONS[ya]
 
