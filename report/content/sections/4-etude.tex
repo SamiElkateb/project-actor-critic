@@ -1,0 +1,21 @@
+% \begin{algorithm}
+% \caption{Actor-Critic algorithm}\label{alg:a2c}
+% \begin{algorithmic}
+
+% \For{each episode}
+% \State Initialize $s_t$, $R \gets [~]$, $S \gets [~]$, $A \gets [~]$
+
+% \For{each time step}
+% \State $a_t \gets \pi(s)$ \Comment{Action aléatoire $a_t$ sélectionnée selon la distribution définie par l'acteur}
+% \State Take action $a_t$, observe $s_t$ and $r_t$
+% \State append $a_t$ to A, $r_t$ to R, $s_t$ to S
+% \If{episode is done}
+% \State $G \gets discounted~R$
+% \State $advantages \gets G - \hat{v}(S)$
+% \State Fit $\pi$ using \(S\) and \(A\) with $advantages$ as sample weights
+% \State Fit $\hat{v}$ using \(S\) and \(G\)
+% \EndIf
+% \EndFor
+% \EndFor
+% \end{algorithmic}
+% \end{algorithm}

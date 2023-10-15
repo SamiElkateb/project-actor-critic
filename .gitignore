@@ -1,3 +1,13 @@
 .DS_Store
 #models
 deep-image/td-cam-img
+
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.log
+*.out
+*.toc
+_minter-main
+out

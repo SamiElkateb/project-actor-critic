@@ -1,0 +1,51 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% IMPORTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[onesize,a4paper]{article}
+\usepackage[a4paper, margin=0.75in]{geometry}
+%%%%%%%%%%%%%%% Code %%%%%%%%%%%%%%% 
+\usepackage{minted}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+%%%%%%%%%%%%%%% Formatting %%%%%%%%%%%%%%% 
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+\usepackage[french,english]{babel}
+\usepackage{iflang}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{subfiles}
+
+%%%%%%%%%%%%%%% DateTime %%%%%%%%%%%%%%% 
+\usepackage[fr-FR]{datetime2}
+
+%%%%%%%%%%%%%%% Graphics %%%%%%%%%%%%%%% 
+\usepackage{graphicx} % Images
+\graphicspath{ {./images/} }
+
+%%%%%%%%%%%%%%% Miscelanous %%%%%%%%%%%%%%% 
+\usepackage{lipsum} % Lorem Ipsum
+\usepackage[colorlinks = true,
+            linkcolor = black,
+            urlcolor  = blue,
+            citecolor = black,
+            anchorcolor = black]{hyperref} % For Hyperlinks
+
+\usepackage{etoolbox}
+
+%%%%%%%%%%%%%%% Colors %%%%%%%%%%%%%%% 
+% \definecolor{primary}{HTML}{353f4f} % Color of the side column
+% \definecolor{text}{HTML}{242A34}
+% \definecolor{linkColor}{HTML}{2a61bb}
+
+
+%%%%%%%%%%%%%%% Table of Content %%%%%%%%%%%%%%% 
+
+%%%%%%%%%%%%%%% Bibliography %%%%%%%%%%%%%%% 
+\usepackage[
+sorting=none
+]{biblatex}
+\addbibresource{./refs.bib}
+
+\usepackage{ifthen}
+
+\usepackage{makecell}

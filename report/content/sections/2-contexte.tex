@@ -1,0 +1,51 @@
+\section{Contexte}
+
+\paragraph{}
+La méthode acteur-critique se base sur deux composants principaux : l'acteur et le critique. 
+Ces deux composants interagissent pour apprendre la meilleure politique possible pour un environnement donné.
+
+\paragraph{L'acteur} est responsable du choix de l'action, il représente la politique $\pi(a|s)$. 
+L'objectif de l'acteur est d'ajuster la politique pour maximiser les récompenses futures.
+
+\paragraph{Le critique} a pour objectif d'approximer la fonction de valeur d'un état $\hat{v}(s_t)$. 
+Celle-ci estime la récompense réduite attendue\footnote{Expected Discounted Return} à partir d'un état.
+Le critique utilise la différence temporelle, 
+qui est l'écart entre l'estimation actuelle de la récompense et celle obtenue, pour mettre à jour ses estimations.
+
+\paragraph{}
+Ce type d'architecture rappelle les réseaux de neurones dans la famille des GANs\footnote{Generative Adversarial Network} 
+où un générateur et un discriminateur interagissent pour s'améliorer mutuellement.
+
+
+Un exemple de pseudocode pour l'algorithme acteur-critique est donné dans la figure ci-dessous.
+\begin{algorithm}
+\caption{Algorithme Acteur-Critique}\label{alg:a2c}
+\begin{algorithmic}
+
+\For{each episode}
+\State Initialize $s_t$, $R \gets [~]$, $S \gets [~]$, $A \gets [~]$
+
+\For{each time step}
+\State $a_t \gets \pi(s)$ \Comment{Action aléatoire $a_t$ sélectionnée selon la distribution définie par l'acteur}
+\State Take action $a_t$, observe $s_t$ and $r_t$
+\State append $a_t$ to A, $r_t$ to R, $s_t$ to S
+\If{episode is done}
+\State $G \gets discounted~R$
+\State $advantages \gets G - \hat{v}(S)$
+\State Fit $\pi$ using \(S\) and \(A\) with $advantages$ as sample weights
+\State Fit $\hat{v}$ using \(S\) and \(G\)
+\EndIf
+\EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+À chaque épisode étape l'acteur retourne une distribution de probabilités en fonction de l'état.
+En effet, l'algorithme acteur-critique utilise la préférence d'actions soft-max pour trouver un équilibre entre l'exploration et l'exploitation. 
+Contrairement à l'algorithme $\large\epsilon$-greedy, cette technique consiste à choisir une action aléatoirement en fonction des probabilités déterminées par l'acteur. \cite{BartoSutton}
+
+Une fois l'épisode terminé, le critique évalue les différents états de l'épisode et retourne les gains réduits attendus.
+Ces gains sont ensuite soustraits des gains réels pour évaluer les avantages obtenus par l'acteur.
+Les avantages peuvent ensuite être utilisés par pour améliorer la politique de l'acteur et les gains réels sont utilisés pour 
+entrainer le critique.
+
