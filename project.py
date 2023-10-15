@@ -13,7 +13,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v10"
+CURRENT_MODEL_VERSION = "v11"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -24,7 +24,7 @@ IS_DEBUG = False
 NO_ACTION = 0
 UP_ACTION = 2
 DOWN_ACTION = 3
-ACTIONS = [UP_ACTION, DOWN_ACTION]
+ACTIONS = [NO_ACTION, UP_ACTION, DOWN_ACTION]
 WIDTH = 80
 HEIGHT = 80
 SKIP_GRAPHS = [1, 2, 3, 4, 5, 7]
@@ -118,6 +118,7 @@ def discount_rewards(r):
 
 
 def compute_hit_ball_bonus(obs_t, obs_tp1):
+    return 0
     if type(obs_t) != np.ndarray or type(obs_tp1) != np.ndarray:
         return 0
     crop_obs_t = ((obs_t[34:194:4, 40:142:2, 2] > 50).astype(np.uint8)).astype(float)
