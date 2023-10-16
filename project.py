@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from time import perf_counter
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v12"
+CURRENT_MODEL_VERSION = "v13"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -28,7 +29,17 @@ ACTIONS = [NO_ACTION, UP_ACTION, DOWN_ACTION]
 WIDTH = 80
 HEIGHT = 80
 SKIP_GRAPHS = [1, 2, 3, 4, 5, 7, 8, 10, 11]
-GRAPH_LEGENDS = {6: "SAGAR_GUBBI_IMPLEMENTATION", 8: "Conv2D Project", 9: "Conv2D Article", 6: "SAGAR_GUBBI_IMPLEMENTATION", 12: "Conv2D Article + NO_ACTION + HIT_REWARD"}
+GRAPH_LEGENDS = {
+    6: "SAGAR_GUBBI_IMPLEMENTATION Dense(512)",
+    8: "Conv2D Project",
+    9: "Conv2D Article",
+    12: "Conv2D Article + NO_ACTION + HIT_REWARD",
+    13: "Conv2D Article + NO_ACTION + HIT_REWARD (FIXED)",
+}
+
+WIN_REWARD = 2
+HIT_BALL_REWARD = 1
+LOSS_REWARD = -1
 
 loaded_rewards = pd.DataFrame({"reward_sum": []})
 
@@ -57,7 +68,7 @@ gamma = 0.99
 
 
 def plot(reward_sums):
-    SIZE = 273
+    SIZE = 320
     data = {}
     for i, reward_sum in reward_sums.items():
         arr = (
@@ -76,7 +87,7 @@ def plot(reward_sums):
     pd.DataFrame(data).plot()
     plt.xlabel("Nombre d'épisode")
     plt.ylabel("Moyenne mobile des gains / épisode")
-    plt.savefig('rolling_average_graph.png')
+    plt.savefig("rolling_average_graph.png")
     plt.show()
 
 
@@ -110,7 +121,7 @@ def discount_rewards(r):
     discounted_r = np.zeros((len(r),))
     running_add = 0
     for t in reversed(range(0, len(r))):
-        if r[t] != 0:
+        if r[t] == WIN_REWARD or r[t] == LOSS_REWARD:
             # reset the sum, since this was a game boundary (pong specific!)
             running_add = 0
         running_add = running_add * gamma + r[t]
@@ -131,7 +142,7 @@ def compute_hit_ball_bonus(obs_t, obs_tp1):
     if len(ball_t) < 1 or len(ball_tp1) < 1:
         return 0
     has_hit_ball = ball_t[0][1] == 49 and ball_tp1[0][1] == 47
-    return 0.01 if has_hit_ball else 0
+    return 1 if has_hit_ball else 0
 
 
 def crop(obs):
@@ -150,6 +161,7 @@ def train_actor_critic():
     env.reset()
 
     reward_sums = []
+
     for ep in range(2000):
         Xs, ys, rewards, mod_rewards = [], [], [], []
         prev_obs, obs = None, env.reset()
@@ -163,6 +175,7 @@ def train_actor_critic():
             action = ACTIONS[ya]
 
             obs, reward, done, *_ = env.step(action)
+            reward = WIN_REWARD if reward == 1 else reward
 
             Xs.append(x)
             ys.append(ya)
@@ -183,7 +196,6 @@ def train_actor_critic():
 
                 actor.fit(Xs, ys, sample_weight=advantages, epochs=1, batch_size=1024)
                 critic.fit(Xs, discounted_rewards, epochs=1, batch_size=1024)
-
                 reward_sum = sum(rewards)
                 reward_sums.append(reward_sum)
                 avg_reward_sum = sum(reward_sums[-50:]) / len(reward_sums[-50:])
@@ -194,7 +206,7 @@ def train_actor_critic():
                 )
                 print(f"Episode {ep} -- mod_reward_sum: {mod_reward_sum}\n")
 
-                if ep % 10 == 0:
+                if ep % 2 == 0:
                     current_df = pd.DataFrame({"reward_sum": reward_sums})
                     df_to_save = pd.concat([loaded_rewards, current_df])
                     df_to_save.to_csv(REWARDS_PATH, index=False)
