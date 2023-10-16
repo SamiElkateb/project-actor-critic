@@ -25,16 +25,15 @@ Un exemple de pseudocode pour la version de l'algorithme que nous avons utilisé
 \State Initialize $s_t$, $R \gets [~]$, $S \gets [~]$, $A \gets [~]$
 
 \For{each time step}
-\State $a_t \gets \pi(s)$ \Comment{Action aléatoire $a_t$ sélectionnée selon la distribution définie par l'acteur}
-\State Take action $a_t$, observe $s_t$ and $r_t$
-\State append $a_t$ to A, $r_t$ to R, $s_t$ to S
-\If{episode is done}
+\State $a_t \sim \pi(s_t)$ \Comment{Action aléatoire $a_t$ sélectionnée selon la distribution définie par l'acteur}
+  \State Take action $a_t$, observe $s_{t+1}$ and $r_{t+1}$
+\State append $a_t$ to A, $r_{t+1}$ to R, $s_{t+1}$ to S
+  \State $s_t \gets s_{t+1}$
+\EndFor
 \State $G \gets discounted~R$
 \State $advantages \gets G - \hat{v}(S)$
 \State Fit $\pi$ using \(S\) and \(A\) with $advantages$ as sample weights
 \State Fit $\hat{v}$ using \(S\) and \(G\)
-\EndIf
-\EndFor
 \EndFor
 \end{algorithmic}
 \end{algorithm}
