@@ -16,8 +16,7 @@ qui est l'écart entre l'estimation actuelle de la récompense et celle obtenue,
 Ce type d'architecture rappelle les réseaux de neurones de la famille des GANs\footnote{Generative Adversarial Network} 
 où un générateur et un discriminateur interagissent pour s'améliorer mutuellement.
 
-
-Un exemple de pseudocode pour l'algorithme acteur-critique est donné dans la figure ci-dessous.
+Un exemple de pseudocode pour la version de l'algorithme que nous avons utilisé est donné dans la figure ci-dessous.
 \begin{algorithm}
 \caption{Algorithme Acteur-Critique}\label{alg:a2c}
 \begin{algorithmic}
@@ -40,7 +39,7 @@ Un exemple de pseudocode pour l'algorithme acteur-critique est donné dans la fi
 \end{algorithmic}
 \end{algorithm}
 
-À chaque épisode étape l'acteur retourne une distribution de probabilités en fonction de l'état.
+À chaque étape l'acteur retourne une distribution de probabilités en fonction de l'état.
 L'algorithme acteur-critique utilise alors la préférence d'actions soft-max pour trouver un équilibre entre l'exploration et l'exploitation. 
 Contrairement à l'algorithme $\large\epsilon$-greedy, cette technique consiste à choisir une action aléatoirement en fonction des probabilités déterminées par l'acteur. \cite{BartoSutton}
 
@@ -48,4 +47,3 @@ Une fois l'épisode terminé, le critique évalue les différents états de l'é
 Ces gains sont ensuite soustraits aux gains réels pour évaluer les avantages obtenus par l'acteur.
 Les avantages peuvent ensuite être utilisés pour améliorer la politique de l'acteur et les gains réels sont utilisés pour 
 entrainer le critique.
-
