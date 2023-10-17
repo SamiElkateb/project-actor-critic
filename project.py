@@ -33,8 +33,8 @@ GRAPH_LEGENDS = {
     6: "SAGAR_GUBBI_IMPLEMENTATION Dense(512)",
     8: "Conv2D Project",
     9: "Conv2D Article",
-    12: "Conv2D Article + NO_ACTION + HIT_REWARD",
-    13: "Conv2D Article + NO_ACTION + HIT_REWARD (FIXED)",
+    # 12: "Conv2D Article + NO_ACTION + HIT_REWARD",
+    13: "Conv2D Article + NO_ACTION + REWARD_SHAPING",
 }
 
 WIN_REWARD = 2
@@ -68,7 +68,7 @@ gamma = 0.99
 
 
 def plot(reward_sums):
-    SIZE = 320
+    SIZE = 520
     data = {}
     for i, reward_sum in reward_sums.items():
         arr = (
