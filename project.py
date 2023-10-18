@@ -14,7 +14,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v14"
+CURRENT_MODEL_VERSION = "v15"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -34,11 +34,12 @@ GRAPH_LEGENDS = {
     8: "Conv2D Project",
     9: "Conv2D Article",
     # 12: "Conv2D Article + NO_ACTION + HIT_REWARD",
-    13: "Conv2D Article + NO_ACTION + REWARD_SHAPING",
-    14: "Dense(512) + NO_ACTION + REWARD_SHAPING",
+    # 13: "Conv2D Article + NO_ACTION + REWARD_SHAPING",
+    # 14: "Dense(512) + NO_ACTION + REWARD_SHAPING",
+    15: "Dense(512) + NO_ACTION + REWARD_SHAPING (FIXED)"
 }
 
-WIN_REWARD = 2
+WIN_REWARD = 1
 HIT_BALL_REWARD = 1
 LOSS_REWARD = -1
 
