@@ -223,7 +223,7 @@ def play_neural_net():
         x = np.hstack([crop(obs), crop(prev_obs)])
         prev_obs = obs
 
-        action_probs = actor.predict(x.reshape(-1, 80, 160, 1), verbose=0)
+        action_probs = actor.predict(x[None, :], verbose=0)
         # action_probs = actor.predict(x, verbose=0)
         ya = np.random.choice(len(ACTIONS), p=action_probs[0])
         action = ACTIONS[ya]
