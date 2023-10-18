@@ -14,7 +14,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v13"
+CURRENT_MODEL_VERSION = "v14"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -35,6 +35,7 @@ GRAPH_LEGENDS = {
     9: "Conv2D Article",
     # 12: "Conv2D Article + NO_ACTION + HIT_REWARD",
     13: "Conv2D Article + NO_ACTION + REWARD_SHAPING",
+    14: "Dense(512) + NO_ACTION + REWARD_SHAPING",
 }
 
 WIN_REWARD = 2
@@ -45,17 +46,13 @@ loaded_rewards = pd.DataFrame({"reward_sum": []})
 
 actor = Sequential(
     [
-        Conv2D(16, 8, input_shape=(HEIGHT, 2 * WIDTH, 1), activation="relu"),
-        Conv2D(32, 4, activation="relu"),
-        Flatten(),
+        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
 critic = Sequential(
     [
-        Conv2D(16, 8, input_shape=(HEIGHT, 2 * WIDTH, 1), activation="relu"),
-        Conv2D(32, 4, activation="relu"),
-        Flatten(),
+        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
         Dense(1),
     ]
 )
@@ -147,13 +144,13 @@ def compute_hit_ball_bonus(obs_t, obs_tp1):
 
 def crop(obs):
     if obs is None or type(obs) != np.ndarray:
-        return np.zeros((HEIGHT, WIDTH))
+        return np.zeros((HEIGHT * WIDTH))
     obs = obs[35:195]
     obs = obs[::2, ::2, 0]
     obs[obs == 144] = 0
     obs[obs == 109] = 0
     obs[obs != 0] = 1
-    return obs.astype(float)
+    return obs.astype(float).ravel()
 
 
 def train_actor_critic():
@@ -170,7 +167,7 @@ def train_actor_critic():
 
             hit_ball_bonus = compute_hit_ball_bonus(prev_obs, obs)
             prev_obs = obs
-            action_probs = actor.predict(x.reshape(-1, 80, 160, 1), verbose=0)
+            action_probs = actor.predict(x[None, :], verbose=0)
             ya = np.random.choice(len(ACTIONS), p=action_probs[0])
             action = ACTIONS[ya]
 
