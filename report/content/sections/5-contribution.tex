@@ -9,7 +9,6 @@ Pour les évaluer, nous avons analysé l'évolution de la moyenne mobile des gai
 Chaque entrainement a été effectué sur 300 épisodes et a duré en moyenne 3 heures. Bien que le nombre d'épisode nécessaire
 pour vaincre l'IA soit plus élevé, nous avons choisit un nombre d'épisode nous permettant d'entrainer plusieurs modèles pour pouvoir ainsi les comparer.
 \includegraphics[width=\linewidth]{rolling_average_graph.png}
-% \includegraphics[width=0.5\textwidth]{rolling_average_graph.png}
 
 \par Notre première modification a consisté à reprendre le même réseau de convolution que celui utilisé pour le projet Pong. 
 Cependant, cette approche n'a pas été concluante. 
@@ -21,4 +20,7 @@ et voulions diminuer le risque de sur-apprentissage.
 décrit dans l'article \emph{Learning to Play Pong using Gradient Learning}\cite{PongPolicyGradient}.
 Celui-ci a donné de meilleurs résultats que le réseau de convolution de notre projet, cependant, il n'a pas surpassé 
 les performances de l'implémentation originale.
+
+\par Enfin, nous avons ajouter du reward shaping au modèle initial, ce qui a donné de meilleurs résultats que nos autres 
+implémentations mais tout de même moins bon que le modèle initial.
 

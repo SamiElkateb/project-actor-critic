@@ -1,0 +1,87 @@
+
+\usemintedstyle{monokai}
+\definecolor{bg}{HTML}{282828}
+% \usemintedstyle{friendly}
+\definecolor{mylinenumbercolor}{rgb}{1,1,1} % defining a custom color: red in this case
+
+\renewcommand{\theFancyVerbLine}{
+    \textcolor{mylinenumbercolor}{\ttfamily\arabic{FancyVerbLine}} % apply the color to line numbers
+}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[
+    xleftmargin=32pt,
+    % frame=lines,
+    % framesep=2mm
+    linenos,
+    bgcolor=bg
+]{python}
+actor = Sequential(
+    [
+        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
+        Dense(len(ACTIONS), activation="softmax"),
+    ]
+)
+critic = Sequential(
+    [
+        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
+        Dense(1),
+    ]
+)
+actor.compile(optimizer=RMSprop(1e-4), loss="sparse_categorical_crossentropy")
+critic.compile(optimizer=RMSprop(1e-4), loss="mse")
+\end{minted}
+\caption{Décorateur d'autorisation (version simplifiée)}
+\label{fig:decorator}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[
+    xleftmargin=32pt,
+    linenos,
+    bgcolor=bg
+]{python}
+for ep in range(2000):
+    Xs, ys, mod_rewards = [], [], []
+    prev_obs, obs = None, env.reset()
+    for t in range(99000):
+        x = np.hstack([crop(obs), crop(prev_obs)])
+
+        prev_obs = obs
+        action_probs = actor.predict(x[None, :], verbose=0)
+        ya = np.random.choice(len(ACTIONS), p=action_probs[0])
+        action = ACTIONS[ya]
+
+        obs, reward, done, *_ = env.step(action)
+
+        Xs.append(x)
+        ys.append(ya)
+\end{minted}
+\caption{Décorateur d'autorisation (version simplifiée)}
+\label{fig:decorator}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[
+    xleftmargin=32pt,
+    linenos,
+    bgcolor=bg
+]{python}
+Xs = np.array(Xs)
+ys = np.array(ys)
+values = critic.predict(Xs, verbose=0)[:, 0]
+discounted_rewards = discount_rewards(mod_rewards)
+advantages = discounted_rewards - values
+
+actor.fit(Xs, ys, sample_weight=advantages, epochs=1, batch_size=1024)
+critic.fit(Xs, discounted_rewards, epochs=1, batch_size=1024)
+\end{minted}
+\caption{Décorateur d'autorisation (version simplifiée)}
+\label{fig:decorator}
+\end{figure}
+
+

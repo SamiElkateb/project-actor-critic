@@ -30,14 +30,14 @@ WIDTH = 80
 HEIGHT = 80
 SKIP_GRAPHS = [1, 2, 3, 4, 5, 7, 8, 10, 11]
 GRAPH_LEGENDS = {
-    6: "SAGAR_GUBBI_IMPLEMENTATION Dense(512)",
-    8: "Conv2D Project",
+    6: "Initial Model Dense(512)",
+    8: "Conv2D Pong Project",
     9: "Conv2D Article",
     # 12: "Conv2D Article + NO_ACTION + HIT_REWARD",
     # 13: "Conv2D Article + NO_ACTION + REWARD_SHAPING",
     # 14: "Dense(512) + NO_ACTION + REWARD_SHAPING",
-    15: "Dense(512) + NO_ACTION + REWARD_SHAPING (FIXED)",
-    16: "Dense(512) + REWARD_SHAPING (FIXED)"
+    # 15: "Dense(512) + NO_ACTION + REWARD_SHAPING",
+    16: "Dense(512) + Reward Shaping"
 }
 
 WIN_REWARD = 1
@@ -67,7 +67,7 @@ gamma = 0.99
 
 
 def plot(reward_sums):
-    SIZE = 520
+    SIZE = 300
     data = {}
     for i, reward_sum in reward_sums.items():
         arr = (
