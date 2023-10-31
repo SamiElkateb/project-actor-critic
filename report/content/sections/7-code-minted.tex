@@ -45,13 +45,13 @@ critic.compile(optimizer=RMSprop(1e-4), loss="mse")
     bgcolor=bg
 ]{python}
 for ep in range(2000):
-    Xs, ys, mod_rewards = [], [], []
+    Xs, ys = [], []
     prev_obs, obs = None, env.reset()
     for t in range(99000):
         x = np.hstack([crop(obs), crop(prev_obs)])
 
         prev_obs = obs
-        action_probs = actor.predict(x[None, :], verbose=0)
+        action_probs = actor.predict(x[None, :])
         ya = np.random.choice(len(ACTIONS), p=action_probs[0])
         action = ACTIONS[ya]
 
@@ -73,7 +73,7 @@ for ep in range(2000):
 ]{python}
 Xs = np.array(Xs)
 ys = np.array(ys)
-values = critic.predict(Xs, verbose=0)[:, 0]
+values = critic.predict(Xs)[:, 0]
 discounted_rewards = discount_rewards(mod_rewards)
 advantages = discounted_rewards - values
 
