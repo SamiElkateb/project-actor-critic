@@ -1,5 +1,5 @@
 
-\usemintedstyle{monokai}
+% \usemintedstyle{monokai}
 \definecolor{bg}{HTML}{282828}
 % \usemintedstyle{friendly}
 \definecolor{mylinenumbercolor}{rgb}{1,1,1} % defining a custom color: red in this case
@@ -17,15 +17,17 @@
     linenos,
     bgcolor=bg
 ]{python}
+
 actor = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
+        Dense(512, activation="elu", input_shape=(2 * 80 * 80,)),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
+
 critic = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
+        Dense(512, activation="elu", input_shape=(2 * 80 * 80,)),
         Dense(1),
     ]
 )
@@ -42,23 +44,30 @@ critic.compile(optimizer=RMSprop(1e-4), loss="mse")
 \begin{minted}[
     xleftmargin=32pt,
     linenos,
-    bgcolor=bg
+    % bgcolor=bg
 ]{python}
 for ep in range(2000):
     Xs, ys = [], []
     prev_obs, obs = None, env.reset()
     for t in range(99000):
-        x = np.hstack([crop(obs), crop(prev_obs)])
 
-        prev_obs = obs
-        action_probs = actor.predict(x[None, :])
-        ya = np.random.choice(len(ACTIONS), p=action_probs[0])
-        action = ACTIONS[ya]
+        action_probs = actor.predict([obs, obs_tp1])
+        action = np.random.choice(len(ACTIONS), p=action_probs[0])
+        obs_tp1, reward, done, *_ = env.step(action)
 
-        obs, reward, done, *_ = env.step(action)
+        value = critic.predict([obs, obs_tp1])
+        advantage = reward - value
+
+        actor.fit(state, action, sample_weight=advantage, epochs=1)
+        critic.fit(state, reward, epochs=1)
+
 
         Xs.append(x)
         ys.append(ya)
+
+
+        obs_tp1, reward, done, *_ = env.step(action)
+
 \end{minted}
 \caption{Décorateur d'autorisation (version simplifiée)}
 \label{fig:decorator}
@@ -69,16 +78,18 @@ for ep in range(2000):
 \begin{minted}[
     xleftmargin=32pt,
     linenos,
-    bgcolor=bg
+    % bgcolor=bg
 ]{python}
 Xs = np.array(Xs)
 ys = np.array(ys)
+
 values = critic.predict(Xs)[:, 0]
 discounted_rewards = discount_rewards(mod_rewards)
 advantages = discounted_rewards - values
 
 actor.fit(Xs, ys, sample_weight=advantages, epochs=1, batch_size=1024)
 critic.fit(Xs, discounted_rewards, epochs=1, batch_size=1024)
+
 \end{minted}
 \caption{Décorateur d'autorisation (version simplifiée)}
 \label{fig:decorator}

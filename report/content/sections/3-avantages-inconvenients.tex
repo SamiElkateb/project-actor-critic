@@ -7,7 +7,7 @@
 La méthode Acteur-Critique combine les avantages des méthodes de type value-based (Q-Learning, Sarsa) et policy-based:
 \end{samepage}
 \begin{itemize}
-  \item Offre une meilleure convergence que les méthodes basées uniquement sur la politique, grâce à l'utilisation de la différence temporelle.
+  \item Elle offre une meilleure convergence que les méthodes basées uniquement sur la politique, grâce à l'utilisation de la différence temporelle.
   \item Ne nécessite pas de données labellisés contrairement à l'approximation de la fonction de valeur par apprentissage supervisé.
   \item Contrairement à Q-Learning ou SARSA, elle peut fonctionner dans un espace d’état très large ou continu.
 \end{itemize}
@@ -16,7 +16,7 @@ La méthode Acteur-Critique combine les avantages des méthodes de type value-ba
 Elle présente cependant quelques inconvénients:
 \begin{itemize}
   \item Nécessite moins d’épisodes pours converger mais les épisodes sont plus long.
-  \item Nécessite d'apprendre à la fois une fonction de valeur et une politique, ce qui augmente la complexité et le coût de calcul de l'algorithme.
-  \item Moins efficace que Q-Learning ou SARSA dans des espaces restreint et discret.
+  \item Nécessite d'apprendre à la fois une fonction de valeur et une politique, ce qui augmente la complexité et le temps de calcul de l'algorithme.
+  \item Moins efficace que Q-Learning ou SARSA dans des espaces restreints et discret.
 \end{itemize}
 

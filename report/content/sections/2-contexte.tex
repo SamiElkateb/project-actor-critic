@@ -4,45 +4,50 @@
 La méthode acteur-critique se base sur deux composants principaux : l'acteur et le critique. 
 Ces deux composants interagissent pour apprendre la meilleure politique possible pour un environnement donné.
 
+\vspace{-0.2cm}
 \paragraph{L'acteur} est responsable du choix de l'action, il représente la politique $\pi(a|s)$. 
-L'objectif de l'acteur est d'ajuster la politique pour maximiser les récompenses futures.
+L'objectif de l'acteur est d'ajuster la politique pour maximiser les récompenses.
 
+\vspace{-0.2cm}
 \paragraph{Le critique} a pour objectif d'approximer la fonction de valeur d'un état $\hat{v}(s_t)$. 
 Celle-ci estime la récompense réduite attendue\footnote{Expected Discounted Return} à partir d'un état.
 Le critique utilise la différence temporelle, 
 qui est l'écart entre l'estimation actuelle de la récompense et celle obtenue, pour mettre à jour ses estimations.
 
+\vspace{-0.2cm}
 \paragraph{}
 Ce type d'architecture rappelle les réseaux de neurones de la famille des GANs\footnote{Generative Adversarial Network} 
-où un générateur et un discriminateur interagissent pour s'améliorer mutuellement.
+où un générateur et un discriminateur interagissent pour s'améliorer mutuellement. Son avantages par rapport aux autres méthodes de type
+policy-gradient est que le critique permet de réduire la variance élevée que peuvent avoir les récompenses.
 
 Un exemple de pseudocode pour la version de l'algorithme que nous avons utilisé est donné dans la figure ci-dessous.
 \begin{algorithm}
 \caption{Algorithme Acteur-Critique}\label{alg:a2c}
-\begin{algorithmic}
+\begin{algorithmic}[1]
 
 \For{each episode}
 \State Initialize $s_t$, $R \gets [~]$, $S \gets [~]$, $A \gets [~]$
 
 \For{each time step}
-\State $a_t \sim \pi(s_t)$ \Comment{Action aléatoire $a_t$ sélectionnée selon la distribution définie par l'acteur}
+\State $a_t \sim \pi(s_t)$ \Comment{Action aléatoire $a_t$ sélectionnée selon la distribution définie par l'acteur} \label{lst:line:distribution}
   \State Take action $a_t$, observe $s_{t+1}$ and $r_{t+1}$
 \State append $a_t$ to A, $r_{t+1}$ to R, $s_{t+1}$ to S
   \State $s_t \gets s_{t+1}$
 \EndFor
-\State $G \gets discounted~R$
-\State $advantages \gets G - \hat{v}(S)$
-\State Fit $\pi$ using \(S\) and \(A\) with $advantages$ as sample weights
-\State Fit $\hat{v}$ using \(S\) and \(G\)
+\State $G \gets discounted~R$ \label{lst:line:discount}
+\State $advantages \gets G - \hat{v}(S)$  \label{lst:line:advantages}
+\State Fit $\pi$ using \(S\) and \(A\) with $advantages$ as sample weights \label{lst:line:fit_actor}
+\State Fit $\hat{v}$ using \(S\) and \(G\) \label{lst:line:fit_critic}
 \EndFor
 \end{algorithmic}
 \end{algorithm}
 
 À chaque étape l'acteur retourne une distribution de probabilités en fonction de l'état.
-L'algorithme acteur-critique utilise alors la préférence d'actions soft-max pour trouver un équilibre entre l'exploration et l'exploitation. 
+L'algorithme acteur-critique utilise alors la préférence d'actions soft-max pour trouver un équilibre entre l'exploration et l'exploitation (ligne~\ref{lst:line:distribution}). 
 Contrairement à l'algorithme $\large\epsilon$-greedy, cette technique consiste à choisir une action aléatoirement en fonction des probabilités déterminées par l'acteur. \cite{BartoSutton}
 
-Une fois l'épisode terminé, le critique évalue les différents états de l'épisode et retourne les gains réduits attendus.
-Ces gains sont ensuite soustraits aux gains réels pour évaluer les avantages obtenus par l'acteur.
-Les avantages peuvent ensuite être utilisés pour améliorer la politique de l'acteur et les gains réels sont utilisés pour 
-entrainer le critique.
+Une fois l'épisode terminé, on peut appliquer une réduction au récompenses perçues en fonction d'un facteur~$\gamma$ (ligne~\ref{lst:line:discount}).
+Le critique évalue alors les différents états de l'épisode et retourne les valeurs prédites (ligne~\ref{lst:line:advantages}).
+Ces prédictions sont ensuite soustraites aux récompenses réelles pour évaluer les avantages obtenus par l'acteur (ligne~\ref{lst:line:advantages}).
+Les avantages peuvent ensuite être utilisés pour améliorer la politique de l'acteur et les récompenses réelles sont utilisés pour 
+entrainer le critique (lignes~\ref{lst:line:fit_actor}-\ref{lst:line:fit_critic}).

@@ -21,6 +21,8 @@ décrit dans l'article \emph{Learning to Play Pong using Gradient Learning}\cite
 Celui-ci a donné de meilleurs résultats que le réseau de convolution de notre projet, cependant, il n'a pas surpassé 
 les performances de l'implémentation originale.
 
-\par Enfin, nous avons ajouter du reward shaping au modèle initial, ce qui a donné de meilleurs résultats que nos autres 
-implémentations mais tout de même moins bon que le modèle initial.
-
+\par Enfin, nous avons ajouté du reward shaping au modèle initial, ce qui a donné de meilleurs résultats que nos autres 
+implémentations. Pendant les premiers épisode cette implémentation est meilleure que le modèle initial.
+Elle est cependant surpassée par celui-ci aux alentours du 170\textsuperscript{ème} épisode.
+Une explication serait que sur le long terme le modèle apprenant uniquement à chaque point marqué
+apprend les coups gagnant alors que le modèle avec reward shaping apprend uniquement à renvoyer la balle.

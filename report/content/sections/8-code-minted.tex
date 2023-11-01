@@ -1,0 +1,105 @@
+% \usemintedstyle{monokai}
+\definecolor{bg}{HTML}{282828}
+\usemintedstyle{friendly}
+\definecolor{mylinenumbercolor}{rgb}{1,1,1} % defining a custom color: red in this case
+
+\renewcommand{\theFancyVerbLine}{
+    \textcolor{mylinenumbercolor}{\ttfamily\arabic{FancyVerbLine}} % apply the color to line numbers
+}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[
+    xleftmargin=32pt,
+    % bgcolor=bg
+]{python}
+
+actor = Sequential(
+    [
+        Input(shape=(HEIGHT, 2 * WIDTH, 1)),
+        Conv2D(16, 8, activation="relu"),
+        Conv2D(32, 4, activation="relu"),
+        Flatten(),
+        Dense(len(ACTIONS), activation="softmax"),
+    ]
+)
+
+critic = Sequential(
+    [
+        Input(shape=(HEIGHT, 2 * WIDTH, 1)),
+        Conv2D(16, 8, activation="relu"),
+        Conv2D(32, 4, activation="relu"),
+        Flatten(),
+        Dense(1),
+    ]
+)
+
+\end{minted}
+\caption{Décorateur d'autorisation (version simplifiée)}
+\label{fig:decorator}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[
+    xleftmargin=32pt,
+    % bgcolor=bg
+]{python}
+
+actor = Sequential(
+    [
+        Input(shape=(HEIGHT, 2 * WIDTH, 1)),
+        Conv2D(6, 3),
+        Conv2D(6, 5),
+        Flatten(),
+        Dense(len(ACTIONS), activation="softmax"),
+    ]
+)
+
+critic = Sequential(
+    [
+        Input(shape=(HEIGHT, 2 * WIDTH, 1)),
+        Conv2D(6, 3),
+        Conv2D(6, 5),
+        Flatten(),
+        Dense(1),
+    ]
+)
+
+\end{minted}
+\caption{Décorateur d'autorisation (version simplifiée)}
+\label{fig:decorator}
+\end{figure}
+
+
+\begin{figure}[!ht]
+\centering
+\begin{minted}[
+    xleftmargin=32pt,
+    % frame=lines,
+    % framesep=2mm
+    % linenos,
+    bgcolor=bg
+]{python}
+
+actor = Sequential(
+    [
+        Input(shape=(2 * WIDTH * HEIGHT,)),
+        Dense(512, activation="elu"),
+        Dense(len(ACTIONS), activation="softmax"),
+    ]
+)
+
+critic = Sequential(
+    [
+        Input(shape=(2 * WIDTH * HEIGHT,)),
+        Dense(512, activation="elu"),
+        Dense(1),
+    ]
+)
+
+\end{minted}
+\caption{Décorateur d'autorisation (version simplifiée)}
+\label{fig:decorator}
+\end{figure}
+

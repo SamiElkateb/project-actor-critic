@@ -37,7 +37,7 @@ GRAPH_LEGENDS = {
     # 13: "Conv2D Article + NO_ACTION + REWARD_SHAPING",
     # 14: "Dense(512) + NO_ACTION + REWARD_SHAPING",
     # 15: "Dense(512) + NO_ACTION + REWARD_SHAPING",
-    16: "Dense(512) + Reward Shaping"
+    16: "Dense(512) + Reward Shaping",
 }
 
 WIN_REWARD = 1
@@ -48,13 +48,13 @@ loaded_rewards = pd.DataFrame({"reward_sum": []})
 
 actor = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
+        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH,)),
         Dense(len(ACTIONS), activation="softmax"),
     ]
 )
 critic = Sequential(
     [
-        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH, )),
+        Dense(512, activation="elu", input_shape=(2 * HEIGHT * WIDTH,)),
         Dense(1),
     ]
 )
