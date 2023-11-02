@@ -9,12 +9,11 @@ import pandas as pd
 from ale_py import ALEInterface
 from ale_py.roms import Pong
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.optimizers.legacy import RMSprop
-from tensorflow.keras.models import load_model
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v9"
+CURRENT_MODEL_VERSION = "v17"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -30,10 +29,17 @@ WIDTH = 80
 HEIGHT = 80
 SKIP_GRAPHS = [1, 2, 3, 4, 5, 7, 8, 10, 11]
 GRAPH_LEGENDS = {
-    6: "Initial Model Dense(512)",
-    8: "Conv2D Pong Project",
-    9: "Conv2D Article",
-    16: "Dense(512) + Reward Shaping",
+    "0-initial": "Initial Model Dense(512)",
+    "1-conv2d-project": "Conv2D Pong Project",
+    "2-conv2D-article": "Conv2D Article",
+    "3-reward-shaping": "Dense(512) + Reward Shaping",
+}
+
+AGENT_MODEL_MAPPING = {
+    "initial-model": "0-initial",
+    "pong-project": "1-conv2d-project",
+    "article-model": "2-conv2D-article",
+    "reward-shaping": "3-reward-shaping",
 }
 
 WIN_REWARD = 2
@@ -88,22 +94,10 @@ def plot(reward_sums):
 
 def stats(mode):
     existing_stats = {}
-    non_existing_data_streak = 0
-    current_data_version = 0
-    while non_existing_data_streak < 10:
-        if current_data_version not in GRAPH_LEGENDS.keys():
-            current_data_version += 1
-            non_existing_data_streak += 1
-            continue
-        filepath = os.path.join(
-            CURRENT_DIR, "models", f"v{current_data_version}", "rewards.csv"
-        )
+    for model_dir, legend in GRAPH_LEGENDS.items():
+        filepath = os.path.join(CURRENT_DIR, "models", model_dir, "rewards.csv")
         if os.path.exists(filepath):
-            existing_stats[GRAPH_LEGENDS[current_data_version]] = pd.read_csv(filepath)
-            non_existing_data_streak = 0
-        else:
-            non_existing_data_streak += 1
-        current_data_version += 1
+            existing_stats[legend] = pd.read_csv(filepath)
 
     for i, stat in existing_stats.items():
         print(f"v{i} mean", stat.reward_sum.mean())
@@ -113,7 +107,7 @@ def stats(mode):
 
 
 def discount_rewards(r):
-    """ take 1D float array of rewards and compute discounted reward. http://karpathy.github.io/2016/05/31/rl/  """
+    """take 1D float array of rewards and compute discounted reward. http://karpathy.github.io/2016/05/31/rl/"""
     discounted_r = np.zeros((len(r),))
     running_add = 0
     for t in reversed(range(0, len(r))):
@@ -142,7 +136,7 @@ def compute_hit_ball_bonus(obs_t, obs_tp1):
 
 
 def crop(obs):
-    """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector. http://karpathy.github.io/2016/05/31/rl/ """
+    """prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector. http://karpathy.github.io/2016/05/31/rl/"""
     if obs is None or type(obs) != np.ndarray:
         return np.zeros((HEIGHT * WIDTH))
     obs = obs[35:195]
@@ -209,18 +203,27 @@ def train_actor_critic():
                 break
 
 
-def play_neural_net():
+def play_neural_net(agent):
     env = gym.make("ALE/Pong-v5", render_mode="human")
-    load_model(ACTOR_PATH.replace(".h5", "_model.h5"))
+    model_path = os.path.join(
+        CURRENT_DIR, "models", AGENT_MODEL_MAPPING[agent], "actor_model.h5"
+    )
+
+    actor = load_model(model_path)
 
     reward_sum = 0
     prev_obs, obs = None, env.reset()
     env.render()
+    X = None
     for t in range(99000):
         x = np.hstack([crop(obs), crop(prev_obs)])
         prev_obs = obs
+        if agent == "pong-project" or agent == "article-model":
+            X = x.reshape((-1, 80, 160, 1))
+        else:
+            X = x[None, :]
 
-        action_probs = actor.predict(x[None, :], verbose=0)
+        action_probs = actor.predict(X, verbose=0)
         ya = np.random.choice(len(ACTIONS), p=action_probs[0])
         action = ACTIONS[ya]
 
@@ -244,12 +247,12 @@ if __name__ == "__main__":
         "mode",
         metavar="mode",
         type=str,
-        choices=["play", "watch", "stats"],
+        choices=["train", "test", "stats"],
         help="""
-        Accepted values: play | watch | stats.
+        Accepted values: train | test | stats.
         The mode of the python script.
-        The play mode is for generating data to train the agent.
-        The watch mode is for watching the agent play.
+        The train mode is for training the agent.
+        The test mode is for watching the agent play.
         The stats mode to see the stats graph.
         """,
     )
@@ -257,6 +260,13 @@ if __name__ == "__main__":
         "--debug",
         action="store_true",
         help="Will create images of the observation state in the debug folder.",
+    )
+    parser.add_argument(
+        "--agent",
+        type=str,
+        default="reward-shaping",
+        choices=["initial-model", "pong-project", "article-model", "reward-shaping"],
+        help="""The algorithm that train the model that the agent will use""",
     )
 
     if len(sys.argv) == 1:
@@ -273,11 +283,11 @@ if __name__ == "__main__":
 
     if args.mode == "stats":
         pass
-    elif args.mode == "watch":
+    elif args.mode == "test":
         print(f"Starting the script in {args.mode} mode with ...")
         ale = ALEInterface()
         ale.loadROM(Pong)
-        play_neural_net()
+        play_neural_net(args.agent)
     else:
         ale = ALEInterface()
         ale.loadROM(Pong)

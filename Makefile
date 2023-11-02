@@ -1,8 +1,8 @@
 start:
-	poetry run python3 ./project.py play
+	poetry run python3 ./project.py train
 
 test:
-	poetry run python3 ./project.py watch
+	poetry run python3 ./project.py test
 
 stats:
 	poetry run python3 ./project.py stats
