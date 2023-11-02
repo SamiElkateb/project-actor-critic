@@ -35,13 +35,6 @@ GRAPH_LEGENDS = {
     "3-reward-shaping": "Dense(512) + Reward Shaping",
 }
 
-AGENT_MODEL_MAPPING = {
-    "initial-model": "0-initial",
-    "pong-project": "1-conv2d-project",
-    "article-model": "2-conv2D-article",
-    "reward-shaping": "3-reward-shaping",
-}
-
 WIN_REWARD = 2
 HIT_BALL_REWARD = 1
 LOSS_REWARD = -1
@@ -60,7 +53,6 @@ critic = Sequential(
         Dense(1),
     ]
 )
-print(actor.summary())
 
 actor.compile(optimizer=RMSprop(1e-4), loss="sparse_categorical_crossentropy")
 critic.compile(optimizer=RMSprop(1e-4), loss="mse")
@@ -203,10 +195,10 @@ def train_actor_critic():
                 break
 
 
-def play_neural_net(agent):
+def play_neural_net():
     env = gym.make("ALE/Pong-v5", render_mode="human")
     model_path = os.path.join(
-        CURRENT_DIR, "models", AGENT_MODEL_MAPPING[agent], "actor_model.h5"
+        CURRENT_DIR, "models", "3-reward-shaping", "actor_model.h5"
     )
 
     actor = load_model(model_path)
@@ -214,15 +206,11 @@ def play_neural_net(agent):
     reward_sum = 0
     prev_obs, obs = None, env.reset()
     env.render()
-    X = None
     for t in range(99000):
         x = np.hstack([crop(obs), crop(prev_obs)])
         prev_obs = obs
-        if agent == "pong-project" or agent == "article-model":
-            X = x.reshape((-1, 80, 160, 1))
-        else:
-            X = x[None, :]
 
+        X = x[None, :]
         action_probs = actor.predict(X, verbose=0)
         ya = np.random.choice(len(ACTIONS), p=action_probs[0])
         action = ACTIONS[ya]
@@ -261,13 +249,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Will create images of the observation state in the debug folder.",
     )
-    parser.add_argument(
-        "--agent",
-        type=str,
-        default="reward-shaping",
-        choices=["initial-model", "pong-project", "article-model", "reward-shaping"],
-        help="""The algorithm that train the model that the agent will use""",
-    )
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -287,7 +268,7 @@ if __name__ == "__main__":
         print(f"Starting the script in {args.mode} mode with ...")
         ale = ALEInterface()
         ale.loadROM(Pong)
-        play_neural_net(args.agent)
+        play_neural_net()
     else:
         ale = ALEInterface()
         ale.loadROM(Pong)
