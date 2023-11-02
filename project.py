@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-from time import perf_counter
 
 import gymnasium as gym
 import matplotlib.pyplot as plt
@@ -9,8 +8,8 @@ import numpy as np
 import pandas as pd
 from ale_py import ALEInterface
 from ale_py.roms import Pong
-from tensorflow.keras.layers import Conv2D, Dense, Flatten
-from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,14 +32,10 @@ GRAPH_LEGENDS = {
     6: "Initial Model Dense(512)",
     8: "Conv2D Pong Project",
     9: "Conv2D Article",
-    # 12: "Conv2D Article + NO_ACTION + HIT_REWARD",
-    # 13: "Conv2D Article + NO_ACTION + REWARD_SHAPING",
-    # 14: "Dense(512) + NO_ACTION + REWARD_SHAPING",
-    # 15: "Dense(512) + NO_ACTION + REWARD_SHAPING",
     16: "Dense(512) + Reward Shaping",
 }
 
-WIN_REWARD = 1
+WIN_REWARD = 2
 HIT_BALL_REWARD = 1
 LOSS_REWARD = -1
 
@@ -117,6 +112,7 @@ def stats(mode):
 
 
 def discount_rewards(r):
+    """ take 1D float array of rewards and compute discounted reward. http://karpathy.github.io/2016/05/31/rl/  """
     discounted_r = np.zeros((len(r),))
     running_add = 0
     for t in reversed(range(0, len(r))):
@@ -145,6 +141,7 @@ def compute_hit_ball_bonus(obs_t, obs_tp1):
 
 
 def crop(obs):
+    """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector. http://karpathy.github.io/2016/05/31/rl/ """
     if obs is None or type(obs) != np.ndarray:
         return np.zeros((HEIGHT * WIDTH))
     obs = obs[35:195]
@@ -182,15 +179,12 @@ def train_actor_critic():
             mod_reward = reward + hit_ball_bonus
             mod_rewards.append(mod_reward)
 
-            # if reward != 0: print(f'Episode {ep} -- step: {t}, ya: {ya}, reward: {reward}')
-
             if done:
                 Xs = np.array(Xs)
                 ys = np.array(ys)
                 values = critic.predict(Xs, verbose=0)[:, 0]
                 discounted_rewards = discount_rewards(mod_rewards)
                 advantages = discounted_rewards - values
-                # advantages = (discounted_rewards - discounted_rewards.mean()) / discounted_rewards.std()
                 print(f"adv: {np.min(advantages):.2f}, {np.max(advantages):.2f}")
 
                 actor.fit(Xs, ys, sample_weight=advantages, epochs=1, batch_size=1024)
@@ -226,7 +220,6 @@ def play_neural_net():
         prev_obs = obs
 
         action_probs = actor.predict(x[None, :], verbose=0)
-        # action_probs = actor.predict(x, verbose=0)
         ya = np.random.choice(len(ACTIONS), p=action_probs[0])
         action = ACTIONS[ya]
 
@@ -256,6 +249,7 @@ if __name__ == "__main__":
         The mode of the python script.
         The play mode is for generating data to train the agent.
         The watch mode is for watching the agent play.
+        The stats mode to see the stats graph.
         """,
     )
     parser.add_argument(
@@ -269,8 +263,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     args = parser.parse_args()
-    print(args.mode, "stats")
-    print(args.mode == "stats")
 
     stats(args.mode)
 
