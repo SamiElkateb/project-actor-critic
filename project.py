@@ -11,9 +11,10 @@ from ale_py.roms import Pong
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers.legacy import RMSprop
+from tensorflow.keras.models import load_model
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CURRENT_MODEL_VERSION = "v16"
+CURRENT_MODEL_VERSION = "v9"
 MODEL_PATH = os.path.join(CURRENT_DIR, "models", CURRENT_MODEL_VERSION)
 ACTOR_PATH = os.path.join(MODEL_PATH, "actor.h5")
 CRITIC_PATH = os.path.join(MODEL_PATH, "critic.h5")
@@ -210,7 +211,7 @@ def train_actor_critic():
 
 def play_neural_net():
     env = gym.make("ALE/Pong-v5", render_mode="human")
-    actor.load_weights(ACTOR_PATH)
+    load_model(ACTOR_PATH.replace(".h5", "_model.h5"))
 
     reward_sum = 0
     prev_obs, obs = None, env.reset()
