@@ -1,0 +1,9 @@
+python==3.11.4
+numpy==1.24.3
+pandas>=2.1.1,<3.0.0
+matplotlib>=3.8.0,<4.0.0
+ale-py>=0.8.1,<1.0.0
+gymnasium>=0.29.1,<1.0.0[accept-rom-license,atari,classic-control]
+atari-py>=0.2.9,<1.0.0
+tensorflow-macos>=2.13.0,<3.0.0
+tensorflow-metal>=1.0.1,<2.0.0
