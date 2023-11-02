@@ -1,3 +1,4 @@
+\vspace{-0.2cm}
 \section{Contexte}
 
 \paragraph{}
@@ -11,14 +12,14 @@ L'objectif de l'acteur est d'ajuster la politique pour maximiser les récompense
 \vspace{-0.2cm}
 \paragraph{Le critique} a pour objectif d'approximer la fonction de valeur d'un état $\hat{v}(s_t)$. 
 Celle-ci estime la récompense réduite attendue\footnote{Expected Discounted Return} à partir d'un état.
+Il permet de réduire la variance élevée que peuvent avoir les récompenses.
 Le critique utilise la différence temporelle, 
 qui est l'écart entre l'estimation actuelle de la récompense et celle obtenue, pour mettre à jour ses estimations.
 
 \vspace{-0.2cm}
 \paragraph{}
 Ce type d'architecture rappelle les réseaux de neurones de la famille des GANs\footnote{Generative Adversarial Network} 
-où un générateur et un discriminateur interagissent pour s'améliorer mutuellement. Son avantage par rapport aux autres méthodes de type
-policy-gradient est que le critique permet de réduire la variance élevée que peuvent avoir les récompenses.
+où un générateur et un discriminateur interagissent pour s'améliorer mutuellement.
 
 Un exemple de pseudocode pour la version de l'algorithme que nous avons utilisé est donné dans la figure ci-dessous.
 \begin{algorithm}
@@ -43,7 +44,7 @@ Un exemple de pseudocode pour la version de l'algorithme que nous avons utilisé
 \end{algorithm}
 
 À chaque étape l'acteur retourne une distribution de probabilités en fonction de l'état.
-L'algorithme acteur-critique utilise alors la préférence d'actions soft-max pour trouver un équilibre entre l'exploration et l'exploitation (ligne~\ref{lst:line:distribution}). 
+L'algorithme acteur-critique utilise alors la préférence d'actions soft-max\footnote{soft-max in action preferences} pour trouver un équilibre entre l'exploration et l'exploitation (ligne~\ref{lst:line:distribution}). 
 Contrairement à l'algorithme $\large\epsilon$-greedy, cette technique consiste à choisir une action aléatoirement en fonction des probabilités déterminées par l'acteur. \cite{BartoSutton}
 
 Une fois l'épisode terminé, on peut appliquer une réduction aux récompenses perçues en fonction d'un facteur~$\gamma$ (ligne~\ref{lst:line:discount}).
